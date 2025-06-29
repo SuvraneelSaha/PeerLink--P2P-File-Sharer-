@@ -86,8 +86,8 @@ public class FileSharer {
                 // header.getBytes() -- it is the raw data that we are sending
 
                 byte[] buffer = new byte[4096];
-                int byteRead ;
-                while(byteRead = fis.read(buffer) != -1 ){
+                int byteRead;
+                while((byteRead = fis.read(buffer)) != -1 ){
                     oos.write(buffer,0,byteRead);
 
                 }
