@@ -167,5 +167,63 @@ public class FileController {
         }
     }
 
+    private static class Multiparser{
+        private final byte[] data;
+        private final String boundary;
+
+        public Multiparser(byte[] data,String boundary){
+            this.data = data;
+            this.boundary = boundary;
+        }
+        // parse we need to do it
+
+        public ParseResult parse(){
+            // lets now parse the raw data ;
+            try{
+                String dataAsString = new String(data);
+                // only pdf , csv, json ,text file can be shared as it can be directly converted to string
+                // this data is pure raw data of byte[]
+                // Project Extention Scope - extend it to include video and photo so that we can use it ;
+                // needs encoding and generic objects
+
+                String fileNameMarker = "filename=\"";
+                        // as "" is a reserved keyword
+                // we have to use \
+                int fileNameStart = dataAsString.indexOf(fileNameMarker);
+                if(fileNameStart == -1 ){
+                    return null;
+                }
+                int fileNameEnd = dataAsString.indexOf( "\"" , fileNameStart);
+
+                String fileName = dataAsString.substring(fileNameStart,fileNameEnd);
+                // we got the file name that the client is trying to upload ;
+                
+
+
+
+            } catch (Exception ex) {
+
+            }
+
+        }
+
+    }
+
+
+    public static class ParseResult{
+        // no tampering allowed
+        public final String fileName ;
+        // name of the file
+        public final byte[] fileContent;
+        // all content are in byte[]
+
+        public ParseResult(String fileName , byte[] fileContent){
+            this.fileName = fileName;
+            this.fileContent = fileContent;
+        }
+    }
+
+
+
     
 }
