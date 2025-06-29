@@ -181,6 +181,7 @@ public class FileController {
             // lets now parse the raw data ;
             try{
                 String dataAsString = new String(data);
+                // converting the byte[] data to String
                 // only pdf , csv, json ,text file can be shared as it can be directly converted to string
                 // this data is pure raw data of byte[]
                 // Project Extention Scope - extend it to include video and photo so that we can use it ;
@@ -197,7 +198,35 @@ public class FileController {
 
                 String fileName = dataAsString.substring(fileNameStart,fileNameEnd);
                 // we got the file name that the client is trying to upload ;
-                
+                // Now
+                // We need to find the content type
+                String contentTypeMarker = "Content-Type: ";
+                int contentTypeStart = dataAsString.indexOf(contentTypeMarker,fileNameEnd);
+                String contentType = "application/octet-stream";
+                if(contentTypeStart != -1){
+                    contentTypeStart +=contentTypeMarker.length();
+                    int contentTypeEnd = dataAsString.indexOf("\r\n",contentTypeStart);
+                    contentType =dataAsString.substring(contentTypeStart,contentTypeEnd);
+                }
+                // Now is the time we find out our data ;
+                String headerEndMarker = "\r\n\r\n";
+                // this headerEndMarker signifies that the headers are over ;
+                int hearderEnd = dataAsString.indexOf(headerEndMarker);
+                if(hearderEnd == -1){
+                    return null;
+                }
+                int contentStart = hearderEnd + headerEndMarker.length();
+
+                byte[] boundaryBytes = ("\r\n--"+boundary+"--").getBytes();
+                int contentEnd = findSequence(data,boundaryBytes,contentStart);
+
+                if(contentEnd == -1){
+                    boundaryBytes = ("\r\n--"+boundary).getBytes();
+                    contentEnd = findSequence(data,boundaryBytes,contentStart);
+                }
+
+
+
 
 
 
@@ -208,7 +237,6 @@ public class FileController {
         }
 
     }
-
 
     public static class ParseResult{
         // no tampering allowed
@@ -221,6 +249,19 @@ public class FileController {
             this.fileName = fileName;
             this.fileContent = fileContent;
         }
+    }
+
+    private static int findSequence(byte[] data , byte[] sequence,int startPos){
+        outer:
+              for (int i = startPos ; i<= data.length - sequence.length ; i++){
+                  for(int j = 0 ; j <sequence.length ; j++){
+                      if(data[i+j] != sequence[j]){
+                          continue outer;
+                      }
+                  }
+                  return i;
+              }
+              return -1;
     }
 
 
