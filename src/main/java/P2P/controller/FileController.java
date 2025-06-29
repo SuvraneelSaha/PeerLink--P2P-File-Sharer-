@@ -5,13 +5,16 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-
+import org.apache.commons.io.IOUtils;
+import java.io.*;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 
 public class FileController {
     private final FileSharer fileSharer;
@@ -102,7 +105,7 @@ public class FileController {
              // not by this CORSHandler
              try(OutputStream oos = exchange.getResponseBody()){
                  oos.write(response.getBytes());
-//                 so no need to write oos.close() 
+//                 so no need to write oos.close()
              }
              // we want to propagate the exception to the client that is calling the method
              // whenever we are using fileStream , Socket , OutputStream
@@ -112,4 +115,57 @@ public class FileController {
          }
 
      }
+
+    private class UploadHandler implements HttpHandler{
+        @Override
+        public void handle(HttpExchange exchange) throws IOException{
+            Headers headers = exchange.getResponseHeaders();
+            headers.add("Access-Control-Allow-Origin" , "*");
+
+            if(!exchange.getRequestMethod().equalsIgnoreCase("POST")){
+
+                String response = "ONLY Post method is allowed , Not any other method is allowed";
+                exchange.sendResponseHeaders(405,response.getBytes().length);
+                // 405 - method not allowed
+                try(OutputStream oos = exchange.getResponseBody()){
+                    oos.write(response.getBytes());
+
+                }
+                return;
+
+            }
+
+            Headers requestHeaders = exchange.getRequestHeaders();
+            String contentType = requestHeaders.getFirst("Content-Type");
+            if(contentType == null || !contentType.startsWith("multipart/form-data")){
+                String response = "Bad Request : Content-Type must be multipart/form-data";
+                exchange.sendResponseHeaders(400,response.getBytes().length);
+                try(OutputStream oos = exchange.getResponseBody()){
+                    oos.write(response.getBytes());
+                }
+                return;
+            }
+            // if the request headers's content type is ok
+            // and the request method is ok ; then we will do parsing of the request from the client side
+
+            try{
+                String boundary = contentType.substring(contentType.indexOf("boundary=")+9);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                // array of bytes which can be acted as a stream , read , close , write ,
+                // just like input output stream
+
+                IOUtils.copy(exchange.getRequestBody(),baos);
+                // whatever i am getting in the request i am getting in a bytes format only
+                byte[] requestData = baos.toByteArray();
+                // we have converted raw data to byte array
+
+                Multiparser parser = new MultiParser(requestData,boundary);
+
+            } catch (Exception ex) {
+
+            }
+        }
+    }
+
+    
 }
